@@ -1,0 +1,8 @@
+_base_: har_ntu60_xsub.yaml
+exp_name: har_ntu120_xsub
+
+data:
+  dataset: ntu120
+  root: data/processed/ntu120
+  protocol: xsub              # cross-subject: 53 training subjects, 53 test subjects
+  num_classes: 120

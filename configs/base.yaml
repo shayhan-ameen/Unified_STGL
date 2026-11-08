@@ -1,0 +1,77 @@
+# Shared architecture and training defaults.
+# Task configs inherit from this file through the `_base_` key and override
+# only the dataset, input encoder, and optimizer settings.
+
+exp_name: base
+seed: 0
+device: cuda
+work_dir: work_dir
+
+model:
+  # Common projected node-feature dimension F' (Sec. "Common Graph Formulation and Feature Projection").
+  in_dim: 64
+
+  # Component switches used by the ablation study.
+  use_stdegad: true          # false -> the predefined adjacency replaces A_D
+  use_sttagcn: true          # false -> plain ST-GCN blocks replace ST-TAGCN blocks
+
+  # Structural Encoder: stacked ST-DAGCN blocks (GCN -> TConv -> ST-DA).
+  structural:
+    channels: [64, 128]      # one entry per ST-DAGCN block (L = 2)
+    temporal_kernel: 3
+    attention: stda          # none | channel | frame | stda
+    reduction: 4             # r_rd, channel reduction ratio of the ST-DA bottleneck
+
+  # Contextual Encoder: Hydra bidirectional mixing + global spatial attention.
+  contextual:
+    dim: 128                 # C_L
+    hydra:
+      d_state: 16
+      d_conv: 4
+      expand: 2
+      headdim: 32
+    attention_dim: 32        # d_att
+
+  # Gated Decoder.
+  decoder:
+    radius: 1                # delta, temporal decoding radius
+    rel_dim: 32              # d_rel
+    gate_hidden: 64          # hidden width of the gating network Gamma
+    pair_hidden: 64          # d_pair, hidden width of the temporal-pair scoring network
+    checkpoint: false        # recompute pair features in backward to save memory
+
+  # ST-TAGCN: stacked blocks (SGC -> TASM -> TConv -> TATM -> residual).
+  tagcn:
+    channels: [64, 128, 256] # one entry per ST-TAGCN block (K = 3)
+    temporal_kernel: 3
+    mod_radius: 1            # r_mod, temporal neighborhood radius of TASM
+    transition_measure: cosine   # cosine | l1 | l2 | flow_mag | landmark_vel
+    modulation: transition       # transition | se | cbam | st_selfattn | static_learnable
+    cos_eps: 1.0e-8
+
+  # Separable SGLayer bottleneck shared by spatial and temporal convolutions.
+  sglayer:
+    reduction: 2
+    min_width: 16
+
+  dropout: 0.3
+
+train:
+  optimizer: adam            # adam | sgd
+  lr: 0.001
+  weight_decay: 0.0001
+  momentum: 0.9
+  scheduler: cosine          # cosine | step
+  warmup_epochs: 0
+  milestones: []
+  gamma: 0.1
+  epochs: 100
+  batch_size: 32
+  accumulation_steps: 1
+  amp: false
+  num_workers: 4
+  log_interval: 20
+
+data:
+  root: data/processed
+  augment: false

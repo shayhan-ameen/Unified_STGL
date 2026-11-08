@@ -1,0 +1,5 @@
+_base_: har_ntu60_xsub.yaml
+exp_name: har_ntu60_xview
+
+data:
+  protocol: xview             # cross-view: cameras 2 and 3 for training, camera 1 for testing

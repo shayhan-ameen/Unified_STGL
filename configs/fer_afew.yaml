@@ -1,0 +1,25 @@
+_base_: base.yaml
+exp_name: fer_afew
+
+data:
+  task: fer
+  dataset: afew
+  root: data/processed/afew
+  protocol: official          # train on the official training split, evaluate on the validation split
+  num_classes: 7              # anger, disgust, fear, happiness, sadness, surprise, neutral
+  num_nodes: 51
+  num_keyframes: 8            # T optical-flow intervals (T + 1 keyframes are selected)
+  patch_size: 7
+  augment: true
+
+model:
+  encoder: face
+  dropout: 0.3
+
+train:
+  optimizer: adam
+  lr: 0.001
+  weight_decay: 0.0001
+  scheduler: cosine
+  epochs: 100
+  batch_size: 32

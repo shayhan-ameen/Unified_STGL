@@ -1,0 +1,8 @@
+_base_: har_ntu60_xsub.yaml
+exp_name: har_ntu120_xset
+
+data:
+  dataset: ntu120
+  root: data/processed/ntu120
+  protocol: xset              # cross-setup: even-numbered setups for training, odd-numbered for testing
+  num_classes: 120

@@ -1,0 +1,34 @@
+_base_: base.yaml
+exp_name: har_ntu60_xsub
+
+data:
+  task: har
+  dataset: ntu60
+  root: data/processed/ntu60
+  protocol: xsub              # cross-subject
+  stream: joint               # joint | bone (train one model per stream, fuse scores with tools/fuse_scores)
+  num_classes: 60
+  num_nodes: 25
+  num_frames: 64              # T after temporal resampling
+  augment: false
+
+model:
+  encoder: skeleton
+  dropout: 0.0
+  tagcn:
+    channels: [64, 128, 256, 256]   # K = 4 blocks for skeleton-based recognition
+  decoder:
+    checkpoint: true
+
+train:
+  optimizer: sgd
+  lr: 0.025
+  momentum: 0.9
+  weight_decay: 0.0004
+  scheduler: step
+  warmup_epochs: 5
+  milestones: [110, 120]
+  gamma: 0.1
+  epochs: 140
+  batch_size: 64
+  accumulation_steps: 4     # effective batch 64 with 16 samples per step on an 8 GB GPU

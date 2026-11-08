@@ -1,0 +1,26 @@
+_base_: base.yaml
+exp_name: fer_casme3_7cls
+
+data:
+  task: fer
+  dataset: casme3
+  root: data/processed/casme3
+  protocol: loso              # leave-one-subject-out
+  label_set: 7cls             # happiness, sadness, anger, disgust, fear, surprise, others
+  num_classes: 7
+  num_nodes: 51
+  num_keyframes: 6
+  patch_size: 7
+  augment: true
+
+model:
+  encoder: face
+  dropout: 0.3
+
+train:
+  optimizer: adam
+  lr: 0.001
+  weight_decay: 0.0001
+  scheduler: cosine
+  epochs: 100
+  batch_size: 32

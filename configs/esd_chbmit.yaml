@@ -1,0 +1,29 @@
+_base_: base.yaml
+exp_name: esd_chbmit
+
+data:
+  task: esd
+  dataset: chbmit
+  root: data/processed/chbmit
+  protocol: lopo              # cross-patient leave-one-patient-out
+  num_classes: 2              # interictal (0), ictal (1)
+  num_nodes: 18               # bipolar channels
+  num_windows: 7              # T one-second windows with 0.5 s step over a 4 s segment
+  window_samples: 256         # n_w = 1 s x 256 Hz
+  balance_train: true         # sample ictal and interictal segments 1:1 for training patients
+
+model:
+  encoder: eeg
+  eeg_encoder:
+    channels: 64              # F_EEG
+    kernel_size: 3
+    dilations: [1, 2, 4, 8]
+  dropout: 0.2
+
+train:
+  optimizer: adam
+  lr: 0.0001
+  weight_decay: 0.0001
+  scheduler: cosine
+  epochs: 100
+  batch_size: 128

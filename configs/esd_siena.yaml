@@ -1,0 +1,29 @@
+_base_: base.yaml
+exp_name: esd_siena
+
+data:
+  task: esd
+  dataset: siena
+  root: data/processed/siena
+  protocol: lopo              # cross-patient leave-one-patient-out
+  num_classes: 2              # interictal (0), ictal (1)
+  num_nodes: 16               # bipolar channels
+  num_windows: 7
+  window_samples: 256
+  balance_train: true
+
+model:
+  encoder: eeg
+  eeg_encoder:
+    channels: 64
+    kernel_size: 3
+    dilations: [1, 2, 4, 8]
+  dropout: 0.2
+
+train:
+  optimizer: adam
+  lr: 0.0001
+  weight_decay: 0.0001
+  scheduler: cosine
+  epochs: 100
+  batch_size: 128
