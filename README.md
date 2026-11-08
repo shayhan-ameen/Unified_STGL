@@ -121,26 +121,6 @@ python main.py --config configs/fer_afew.yaml --phase test
 
 Each run writes `config.yaml`, `train.log`, per-fold checkpoints and histories, the pooled predictions (`predictions.npz`), and `results.json` to `work_dir/<exp_name>/`. Metrics (accuracy / WAR, UF1, UAR, and for seizure detection precision, recall, specificity, F1) are computed from the predictions pooled over all folds.
 
-### Ablations
-
-The components studied in the paper are switches in the configuration:
-
-| Study | Override |
-|---|---|
-| Without ST-DEGaD (predefined adjacency) | `model.use_stdegad=false` |
-| Without ST-TAGCN (plain ST-GCN blocks) | `model.use_sttagcn=false` |
-| Number of ST-DAGCN blocks L | `model.structural.channels=[64,128]` (one width per block) |
-| Number of ST-TAGCN blocks K | `model.tagcn.channels=[64,128,256]` |
-| Number of keyframes T | `data.num_keyframes=8` (re-run preprocessing with the same value) |
-| Attention in the Structural Encoder | `model.structural.attention=none\|channel\|frame\|stda` |
-| Transition measure of TASM/TATM | `model.tagcn.transition_measure=cosine\|l1\|l2\|flow_mag\|landmark_vel` |
-| Modulation mechanism | `model.tagcn.modulation=transition\|se\|cbam\|st_selfattn\|static_learnable` |
-
-```bash
-python main.py --config configs/fer_afew.yaml --set model.use_stdegad=false exp_name=fer_afew_no_stdegad
-python main.py --config configs/fer_afew.yaml --set model.tagcn.modulation=cbam exp_name=fer_afew_cbam
-```
-
 ### Model complexity
 
 ```bash
@@ -148,28 +128,6 @@ python tools/complexity.py --config configs/fer_afew.yaml --device cuda
 ```
 
 reports parameters and FLOPs per module, latency, throughput, and peak GPU memory for a single input.
-
-## Implementation details
-
-The same architecture is used for every benchmark. Node features are projected to F' = 64. The Structural Encoder has 2 ST-DAGCN blocks with widths (64, 128) and ST-DA reduction ratio 4. The Contextual Encoder uses C<sub>L</sub> = 128 with a Hydra state dimension of 16 (depthwise temporal kernel 4, expansion 2, head dimension 32) and attention dimension 32. The Gated Decoder uses a temporal decoding radius of 1, relation dimension 32, and gating / scoring hidden widths of 64. ST-TAGCN has K = 3 blocks with widths (64, 128, 256), temporal kernel size 3, and modulation radius 1 (K = 4 blocks for skeleton data). Spatial and temporal convolutions use the separable SGLayer bottleneck of EfficientGCN with reduction ratio 2. The sequence length is T = 8 keyframes for facial data (T = 6 for CAS(ME)<sup>3</sup>), T = 7 one-second windows for EEG, and T = 64 frames for skeletons.
-
-| | Facial expression | Seizure detection | Action recognition |
-|---|---|---|---|
-| Optimizer | Adam, lr 1e-3, wd 1e-4 | Adam, lr 1e-4, wd 1e-4 | SGD, lr 0.025, momentum 0.9, wd 4e-4 |
-| Schedule | cosine, 100 epochs | cosine, 100 epochs | 5 warm-up epochs, /10 at 110 and 120, 140 epochs |
-| Batch size | 32 | 128 | 64 |
-| Dropout | 0.3 | 0.2 | 0 |
-| Augmentation | scale [0.9, 1.1], horizontal flip, rotation ±10° | 1:1 ictal / interictal sampling for training patients | none |
-
-Implementation notes on points the paper leaves to the code:
-
-- T optical-flow intervals are produced from T + 1 selected keyframes (the first frame is always kept as the reference).
-- The graph convolution of the Structural Encoder uses batch normalisation followed by ReLU as its activation; the global spatial attention of the Contextual Encoder is single-head.
-- The gating network is a two-layer MLP (4C<sub>L</sub> → 64 → 2); the temporal-pair scoring network is 4C<sub>L</sub> → 64 → tanh → 1.
-- The cosine similarity in TASM/TATM uses ε = 1e-8; the L1 and L2 ablation measures are scaled by their per-sample maximum so they share the [0, 1] range.
-- Hydra is implemented in plain PyTorch (`models/hydra.py`) with an explicit scan, which keeps the code portable across platforms; no custom CUDA kernels are required.
-- For skeleton data the fourth ST-TAGCN block has width 256, the most active body of each recording is used, and the gated decoder recomputes its pair features during the backward pass (`model.decoder.checkpoint=true`) to fit a 64-sample effective batch on an 8 GB GPU through gradient accumulation.
-- Reported metrics come from the model after the final epoch of every fold; no test-set model selection is performed.
 
 ## Results
 
