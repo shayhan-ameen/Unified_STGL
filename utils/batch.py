@@ -1,6 +1,6 @@
 """Common dataset interface and batch helpers.
 
-Every task dataset returns dictionaries with
+Every dataset used with ``main.py`` returns dictionaries with
 
     x         : task-specific input tensor with leading ``[T, N, ...]`` axes
     y         : class index (``int64``)

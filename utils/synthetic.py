@@ -1,8 +1,8 @@
 """Shape-faithful synthetic samples for every task.
 
-They allow the whole pipeline (model, training loop, visualisation) to be
+They allow the whole pipeline (model, training loop, analysis tools) to be
 exercised without the benchmark datasets, which are not distributed with the
-code.  The tensors have the same layout as the real preprocessed data:
+code.  The tensors have the same layout as the benchmark caches:
 
 * fer : ``[T, N, Sz, Sz]`` optical-flow magnitude patches (non-negative)
 * esd : ``[T, N, n_w]`` z-scored window signals

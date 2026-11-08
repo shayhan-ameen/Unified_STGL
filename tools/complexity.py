@@ -20,9 +20,9 @@ import torch
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 
-from data.synthetic import make_batch  # noqa: E402
 from models import build_model  # noqa: E402
 from utils.config import load_config  # noqa: E402
+from utils.synthetic import make_batch  # noqa: E402
 
 
 def count_parameters(module: torch.nn.Module) -> float:

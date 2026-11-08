@@ -1,14 +1,11 @@
 # Core
 torch>=2.1
 numpy>=1.24
-scipy>=1.10
 pyyaml>=6.0
-scikit-learn>=1.3
-einops>=0.7
-tqdm>=4.65
 
-# Analysis
+# Analysis (FLOPs in tools/complexity.py)
 fvcore>=0.1.5
 
 # Tests
 pytest>=7.4
+scikit-learn>=1.3

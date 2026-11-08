@@ -43,10 +43,9 @@ import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 
-from data import build_dataset
-from data.base import SubsetWithTransform, collate, transition_prior
-from data.synthetic import SyntheticDataset
 from models import build_model
+from utils.batch import SubsetWithTransform, collate, transition_prior
+from utils.synthetic import SyntheticDataset
 from utils.config import Config, load_config, save_config
 from utils.logger import CSVHistory, get_logger
 from utils.metrics import compute_metrics, format_metrics, primary_metric
@@ -64,6 +63,23 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--fold", type=int, default=None, help="run a single fold index only")
     parser.add_argument("--work-dir", default=None, help="override the output directory")
     return parser.parse_args()
+
+
+def load_benchmark(cfg: Config):
+    """Return the benchmark dataset for ``cfg.data`` as a ``GraphSequenceDataset``.
+
+    The benchmark caches are prepared outside this repository; a reader
+    module placed under ``data/`` that exposes ``build_dataset(cfg)`` is
+    picked up here, otherwise the run must use ``--synthetic``.
+    """
+    try:
+        from data import build_dataset  # provided together with the benchmark caches
+    except ImportError as err:
+        raise SystemExit(
+            "No benchmark reader found under data/. Place the dataset caches and their reader module there, "
+            "or run with --synthetic to exercise the pipeline on random data of the right shape."
+        ) from err
+    return build_dataset(cfg)
 
 
 def make_loader(dataset, indices, cfg: Config, train: bool) -> DataLoader:
@@ -177,7 +193,7 @@ def main() -> None:
         dataset = SyntheticDataset(cfg, num_samples=max(2 * int(cfg.train.batch_size), 8), seed=int(cfg.seed))
         folds = [("synthetic", np.arange(0, len(dataset) * 3 // 4), np.arange(len(dataset) * 3 // 4, len(dataset)))]
     else:
-        dataset = build_dataset(cfg)
+        dataset = load_benchmark(cfg)
         folds = make_folds(cfg.data.protocol, dataset.subjects, dataset.splits, int(cfg.data.get("num_folds", 10)), int(cfg.seed))
     if args.fold is not None:
         folds = [folds[args.fold]]

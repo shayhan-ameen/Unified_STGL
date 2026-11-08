@@ -5,9 +5,9 @@ import pytest
 import torch
 import torch.nn.functional as F
 
-from data.synthetic import make_batch
 from models import build_model
 from utils.config import load_config
+from utils.synthetic import make_batch
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CONFIGS = sorted(p for p in glob.glob(os.path.join(ROOT, "configs", "*.yaml")) if not p.endswith("base.yaml"))
