@@ -1,6 +1,6 @@
-"""NTU RGB+D skeleton dataset over the preprocessed stream cache.
+"""NTU RGB+D skeleton dataset over the stream cache.
 
-``preprocess/har_preprocess.py`` writes, per benchmark protocol,
+The cache holds, per benchmark protocol,
 
     <root>/<protocol>/<split>_joint.npy   ``[S, T, 25, 3]`` spine-centred joint coordinates
     <root>/<protocol>/<split>_bone.npy    ``[S, T, 25, 3]`` bone displacements
@@ -37,7 +37,7 @@ class HARDataset(GraphSequenceDataset):
         for split in ("train", "test"):
             path = os.path.join(self.root, f"{split}_{self.stream}.npy")
             if not os.path.isfile(path):
-                raise FileNotFoundError(f"{path} not found; run preprocess/har_preprocess.py first")
+                raise FileNotFoundError(f"{path} not found; see the data preparation section of the README")
             self._data[split] = np.load(path, mmap_mode="r")
             labels = np.load(os.path.join(self.root, f"{split}_labels.npy"))
             with open(os.path.join(self.root, f"{split}_names.txt"), encoding="utf-8") as handle:

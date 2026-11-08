@@ -1,6 +1,6 @@
-"""Facial expression datasets over the preprocessed landmark-motion cache.
+"""Facial expression datasets over the landmark-motion cache.
 
-``preprocess/fer_preprocess.py`` writes, for every clip, one ``.npz`` with
+The cache holds, for every clip, one ``.npz`` with
 
     patches    : ``[T, 51, Sz, Sz]`` optical-flow magnitude patches
     landmarks  : ``[T + 1, 51, 2]`` aligned landmark coordinates of the keyframes
@@ -90,7 +90,7 @@ def label_to_index(dataset: str, label: str, label_set: str = "") -> int:
 def read_index(root: str) -> List[Dict[str, str]]:
     path = os.path.join(root, "index.csv")
     if not os.path.isfile(path):
-        raise FileNotFoundError(f"No index.csv under {root}; run preprocess/fer_preprocess.py first")
+        raise FileNotFoundError(f"No index.csv under {root}; see the data preparation section of the README")
     with open(path, newline="", encoding="utf-8") as handle:
         return list(csv.DictReader(handle))
 
@@ -128,7 +128,7 @@ class FERDataset(GraphSequenceDataset):
         if patches.shape[0] != self.num_keyframes:
             raise ValueError(
                 f"{record['path']} holds {patches.shape[0]} flow intervals but the config asks for "
-                f"{self.num_keyframes}; re-run preprocessing with --num-keyframes {self.num_keyframes}"
+                f"{self.num_keyframes}; the cache must be built with T = {self.num_keyframes}"
             )
         return {
             "x": torch.from_numpy(patches),

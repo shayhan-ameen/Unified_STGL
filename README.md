@@ -40,7 +40,6 @@ Unified_STGL/
 │   ├── st_tagcn.py            # TASM, TATM, ST-TAGCN blocks (and the ablation variants)
 │   └── unified_stgl.py        # the complete network and build_model(cfg)
 ├── data/                      # dataset readers (fer.py, esd.py, har.py), augmentation, synthetic samples
-├── preprocess/                # raw data -> cached graph sequences for each modality
 ├── utils/                     # configuration, seeding, logging, metrics, optimisers, evaluation protocols
 ├── tools/                     # sanity_check.py, complexity.py, fuse_scores.py
 └── tests/                     # pytest unit tests
@@ -56,8 +55,6 @@ pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
 pip install -r requirements.txt
 ```
 
-`dlib` (facial landmarks) is easiest to install with `conda install -c conda-forge dlib`. The 68-point shape predictor `shape_predictor_68_face_landmarks.dat` can be downloaded from the dlib model page and is passed to the preprocessing script with `--predictor`.
-
 A quick check that the whole model builds and runs on every configuration and ablation variant (no data needed):
 
 ```bash
@@ -67,32 +64,13 @@ python -m pytest tests -q
 
 ## Data preparation
 
-Datasets are not distributed with the code. Each preprocessing script converts the raw data into a cache under `data/processed/<dataset>/`, and the configs point to those folders (`data.root`).
+Datasets are not distributed with the code. The readers in `data/` expect each benchmark as a cache under `data/processed/<dataset>/` (the `data.root` entry of the configs) in the following layouts.
 
-**Facial expression recognition** (AFEW 8.0, Oulu-CASIA VIS/Strong, CAS(ME)<sup>3</sup>, SMIC-HS; CK+ and CASME II for cross-dataset evaluation). Frames are aligned to 224 x 224 using dlib landmarks, the 17 contour landmarks are removed (N = 51), the T + 1 frames with the largest landmark displacement are kept as keyframes, dense Farneback optical flow is computed between successive keyframes, and a 7 x 7 magnitude patch is cut around every landmark.
+**Facial expression recognition** (AFEW 8.0, Oulu-CASIA VIS/Strong, CAS(ME)<sup>3</sup>, SMIC-HS; CK+ and CASME II for cross-dataset evaluation). One `.npz` per clip with `patches [T, 51, 7, 7]` (optical-flow magnitude patches around the 51 inner-face landmarks of T + 1 keyframes, faces aligned to 224 x 224) and `landmarks [T + 1, 51, 2]`, plus an `index.csv` with the columns `id, path, subject, label, split`. Labels are the expression names of each dataset; `split` is `train` / `val` for AFEW and empty for subject-independent protocols.
 
-```bash
-python preprocess/fer_preprocess.py --dataset afew    --input /path/AFEW       --output data/processed/afew    --predictor shape_predictor_68_face_landmarks.dat --num-keyframes 8
-python preprocess/fer_preprocess.py --dataset oulu_vl --input /path/OuluCASIA  --output data/processed/oulu_vl --predictor shape_predictor_68_face_landmarks.dat --num-keyframes 8
-python preprocess/fer_preprocess.py --dataset smic_hs --input /path/SMIC       --output data/processed/smic_hs --predictor shape_predictor_68_face_landmarks.dat --num-keyframes 8
-python preprocess/fer_preprocess.py --dataset casme3  --annotations casme3_clips.csv --output data/processed/casme3 --predictor shape_predictor_68_face_landmarks.dat --num-keyframes 6
-```
+**Epileptic seizure detection** (CHB-MIT, Siena). One `.npz` per recording with `x [S, 7, N, 256]` (S segments of 4 s, each split into T = 7 one-second windows with a 0.5 s step over the 18-channel or 16-channel bipolar montage, band-pass filtered, notch filtered, artifact cleaned, and z-scored per channel) and `y [S]` (1 = ictal, 0 = interictal), plus an `index.csv` with the columns `file, path, patient, num_segments`.
 
-`--annotations` takes a CSV with the columns `id, subject, label, split, frames[, onset, offset]` (`frames` is a video file or an image folder) and works for any dataset whose annotation table differs from the built-in layouts.
-
-**Epileptic seizure detection** (CHB-MIT, Siena). Recordings are converted to the 18-channel (CHB-MIT) or 16-channel (Siena) bipolar montage, band-pass filtered (0.5-70 Hz, third-order Butterworth), notch filtered at 50/60 Hz, cleaned with FastICA, z-scored per channel, and cut into 4 s segments (ictal segments with a 1 s step, interictal segments without overlap). Every segment is split into T = 7 one-second windows with a 0.5 s step.
-
-```bash
-python preprocess/esd_preprocess.py --dataset chbmit --input /path/chb-mit --output data/processed/chbmit
-python preprocess/esd_preprocess.py --dataset siena  --input /path/siena   --output data/processed/siena
-```
-
-**Human action recognition** (NTU RGB+D 60 / 120). Skeleton files are parsed, the most active body is kept, coordinates are centred on the middle-spine joint, sequences are resampled to T = 64 frames, and joint and bone streams are written for every protocol.
-
-```bash
-python preprocess/har_preprocess.py --benchmark ntu60  --input /path/nturgb+d_skeletons --missing samples_with_missing_skeletons.txt --output data/processed/ntu60
-python preprocess/har_preprocess.py --benchmark ntu120 --input /path/nturgb+d_skeletons --missing samples_with_missing_skeletons.txt --output data/processed/ntu120
-```
+**Human action recognition** (NTU RGB+D 60 / 120). Per protocol folder (`xsub`, `xview`, `xset`): `train_joint.npy` / `test_joint.npy` and `train_bone.npy` / `test_bone.npy` of shape `[S, 64, 25, 3]` (coordinates centred on the middle-spine joint and resampled to 64 frames; bones are displacements to the parent joint), `train_labels.npy` / `test_labels.npy`, and `train_names.txt` / `test_names.txt` with the NTU sample names.
 
 ## Training and evaluation
 

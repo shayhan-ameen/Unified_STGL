@@ -1,6 +1,6 @@
-"""EEG seizure-detection dataset over the preprocessed segment cache.
+"""EEG seizure-detection dataset over the segment cache.
 
-``preprocess/esd_preprocess.py`` writes one ``.npz`` per EDF recording with
+The cache holds one ``.npz`` per EDF recording with
 
     x : ``[S, T, N, n_w]`` windowed, z-scored bipolar signals of S segments
     y : ``[S]`` segment labels (1 = ictal, 0 = interictal)
@@ -34,7 +34,7 @@ class ESDDataset(GraphSequenceDataset):
         self.balance = bool(cfg.data.get("balance_train", True))
         index_path = os.path.join(self.root, "index.csv")
         if not os.path.isfile(index_path):
-            raise FileNotFoundError(f"No index.csv under {self.root}; run preprocess/esd_preprocess.py first")
+            raise FileNotFoundError(f"No index.csv under {self.root}; see the data preparation section of the README")
         self._arrays: Dict[str, np.lib.npyio.NpzFile] = {}
         records: List[Dict[str, Any]] = []
         with open(index_path, newline="", encoding="utf-8") as handle:
